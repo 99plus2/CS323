@@ -1,0 +1,241 @@
+                P R E L I M I N A R Y    S P E C I F I C A T I O N
+
+
+                                         Due 5:00 PM, Friday, 11 December 2009
+
+CPSC 323   Homework #7   Redundant Remote Filesystem
+
+(40 points) Implement in Python, Perl, or Ruby a wrapper utility that provides
+a web-enabled redundant filesystem to standard Linux programs.
+
+  NAME
+    rrfs - Redundant remote filesystem for standard Unix programs
+
+  SYNOPSIS
+    rrfs [-r COPIES] PROGRAM [ARG]*
+
+  DESCRIPTION
+    rrfs is a program that allows unmodified Unix programs to read and write
+    files on a filesystem that suffers from file corruption and to read files
+    from the web.
+
+    PROGRAM is the program that should be executed with access to the rrfs
+    filesystem, and 0 or more ARGs are passed to the program.
+
+    Paths in the filesystem provided by rrfs have the form 'local:PATH' (where
+    PATH is either a relative or absolute file path on the local filesystem) or
+    'http://HOST/PATH' (where HOST is the name of the remote machine and PATH is
+    the file location on the remote machine).
+
+    Each byte of a file written to the local filesystem is repeated COPIES
+    number of times.  For example, if the executed program writes the string
+    'abc' and COPIES is 3, it is stored in the file as 'aaabbbccc'.  When a file
+    is read from rrfs, each byte of the file is assumed to have been written
+    COPIES number of times.  To transparently provide error correction to the
+    running program, rrfs reads each sequence of COPIES bytes and computes the
+    byte returned to the running program by a majority vote. COPIES must be a
+    positive, odd integer.  If the -r command-line argument is not specified,
+    COPIES defaults to 1.  For example, the command
+
+      echo -n "hello" | rrfs -r 3 tee local:hello_world.txt
+
+    writes the string 'hhheeellllllooo' to the file hello_world.txt in the
+    current working directory and prints 'hello' to standard output. The command
+
+      rrfs /c/cs323/Hwk7/util/cat http://www.cs.yale.edu/index.html
+
+    prints the HTML (the language used for writing web pages) for the CS
+    Department's homepage to standard output.
+
+    rrfs provides this filesystem to the running program by using ptrace to
+    intercept the open(), read(), write(), and close() system calls and
+    overriding their behavior when they refer to the filesystem provided by
+    rrfs. Recall that in Linux, a program interacts with the filesystem using
+    these calls. It is important that rrfs does not override the behavior for
+    these system calls when they refer to file paths not in the filesystem
+    provided by rrfs (e.g., '/tmp/foo.txt'); in this case, rrfs intercepts the
+    system call but passes it through unmodified to the operating system.
+
+    Common flags and error codes used by system calls have been provided for you
+    in the 'systap' module. (Further details about the 'systap' module are in
+    the next section.) See /c/cs323/Hwk7/systap/systap.h for a list of the
+    provided constants. Note that many constants are prefixed with 'ST_' to
+    avoid name collisions.
+
+    Local locations in the filesystem (beginning with 'local:') are either
+    read-only or write-only.  Calls to open() requesting read-write access
+    (O_RDWR) for these files return an EACCES error. Remote locations in the
+    filesystem (beginning with 'http:') are read-only, so a call to open()
+    requesting write permission (O_WRONLY or O_RDWR) for remote paths returns an
+    EROFS error.
+
+    rrfs additionally (beyond O_RDONLY, O_WRONLY, and O_RDWR) implements the
+    following flags to the open() system call:
+      - O_APPEND
+      - O_CREAT (umask and ownership considerations are not implemented)
+      - O_EXCL
+      - O_TRUNC
+    rrfs silently ignores all other flags. If one of the these additional flags
+    is specified for a remote location, then open() returns an EROFS error
+    (since remote locations are read-only).
+
+    For remote locations, rrfs implements the following error codes for the
+    open, read, write, close system calls: ENOENT, EROFS, and EBADF. For local
+    locations, rrfs additionally implements the EEXIST and EACCES error codes.
+
+  INTERCEPTING SYSTEM CALLS
+
+    A module called 'systap' has been provided that allows you to intercept
+    system calls from a running process. See /c/cs323/Hwk7/systap/systap.h for
+    detailed documentation about the provided constants (e.g., system call
+    numbers, error codes, flags) and functions. Example programs illustrating
+    how to use the systap module for Perl, Python, and Ruby are available in
+    /c/cs323/Hwk7/systap/examples.
+
+    The script interpreter must be able to locate the 'systap' module when your
+    program is executed.  We have provided a shortcut program that you can use
+    (in place of using the standard Python, Perl, or Ruby interpeter) that runs
+    the interpreter and tells it where to locate our additional module. To use
+    this wrapper, specify our shortcut in the first line of your file instead of
+    the normal interpreter. For Python, the first line of your script file
+    should be:
+
+      #!/c/cs323/Hwk7/systap/python.sh
+
+    For Perl, the first line should be:
+
+      #!/c/cs323/Hwk7/systap/perl.sh
+
+    And for Ruby, the first line should be:
+
+      #!/c/cs323/Hwk7/systap/ruby.sh
+
+  SYSTEM CALL REVIEW
+
+    System calls can be thought of as special function calls to the operating
+    system (OS). Normally, a system call operates by:
+        1) Storing an integer corresponding to the system call in a pre-defined
+           register. Each system call is associated with a unique integer.
+        2) Storing the arguments passed to the system call in pre-defined
+           registers.
+        3) Transfer control to the OS.
+        4) OS reads system call number and arguments, and executes the desired
+           function.
+        5) OS reads data to or writes data from process's memory (if necessary;
+           such as for open() and read()).
+        6) OS places a return code in a pre-defined register.
+        7) Transfer control back to the program.
+
+    Using a special facility in Linux called 'ptrace', we can temporarily pause
+    the calling program at step 3 (when a system call is entered) and step 7
+    (when a system call returns).
+
+    At both points, you have access to:
+        * System call being executed
+        * System call arguments
+        * The calling process's memory
+    When a system call returns, you additionally have access to:
+        * System call's result (return code)
+    Any of these parameters may be modified before resuming the program.
+
+    An error code is returned from a system call by setting its result to the
+    error code itself (e.g., ST_NOENT from systap.h).  The manpages for calls
+    such as open(), read(), etc indicate that -1 is returned because those pages
+    document the system calls' glibc wrappers, which additionally handle the
+    setting of the errno variable. In this assigment, we are emulating the
+    system call itself.
+
+    HINT: If you would like to prevent the original system call from being
+    passed to the operating system, you can replace it with a "benign" system
+    call such as getpid().
+
+  SUGGESTED STEPS
+
+    It can help to break the assignment into smaller pieces, and get basic
+    functionality working before moving on to more advanced features. The
+    following plan might be applied:
+
+    1) Intercept system calls and return ENOENT for those that refer to the
+       filesystem provided by rrfs.  rrfs should be able to successfully run
+       Unix programs that do not access the rrfs filesystem.  For example, the
+       command
+
+          echo "hello" | rrfs tee hello.txt
+
+       should produce no error, while
+
+          echo "hello" | rrfs tee local:hello.txt
+
+       should fail. It may be useful to print some debugging information about
+       the intercepted system calls to help understand how they work.
+
+    2) Implement read access to local file paths.
+
+    3) Implement write access to local file paths.
+
+    4) Implement redundancy (the COPIES command-line option).
+
+    5) Implement read access to remote file paths.
+
+  NOTES
+    * If COPIES is not a positive odd integer, rrfs prints an error message to
+      standard error and exits.
+
+    * rrfs exits with the same status code returned by the executed PROGRAM.
+
+    * You may assume that all command-line arguments are valid, and that PROGRAM
+      does not begin with a '-' chracter.
+
+    * You may assume that all supplied file paths refer to regular files. You do
+      not need to handle cases where paths refer to directories, character/block
+      devices, symbolic links, FIFOs, etc.
+
+    * It is advised to distinguish emulated file descriptors relating to rrfs
+      file paths from OS-allocated file descriptors returned by open() calls
+      passed through to the operating system. In particular, it can be simplest
+      to leave OS-allocated file descriptors unchanged, since these descriptors
+      can be used for other system calls not handled by rrfs, such as fstat()
+      and mmap(). You can begin numbering the emulated file descriptors at a
+      value well above the typical per-process limit for open files, such as
+      2^30.
+
+    * You may assume that all files being read have a size in bytes that is a
+      multiple of COPIES bytes.
+
+    * For remote locations, you may simplify the implementation by fetching and
+      buffering the entire file when it is opened.  However, rrfs must not
+      buffer the entire content for local files.
+
+    * You may assume that the executed PROGRAM does not call fork() or any
+      variant of exec().
+
+    * Python, Perl, and Ruby have built-in libraries for accessing files on
+      the web via the HTTP protocol:
+      - Python: urllib2 module; see the urlopen() function and tutorial at:
+        http://www.voidspace.org.uk/python/articles/urllib2.shtml
+      - Perl: LWP module; see the LWP::Simple class and tutorial at:
+        http://search.cpan.org/dist/libwww-perl/lwptut.pod
+      - Ruby: Net::HTTP module; see examples at:
+        http://www.ruby-doc.org/stdlib/libdoc/net/http/rdoc/classes/Net/HTTP.html
+
+    * rrfs must close any file descriptor that is opened as soon as it is no
+      longer needed.
+
+    * If a remote file cannot be retrieved for any reason (see suggested
+      tutorials above for detecting such cases), rrfs interprets this as if the
+      file does not exist and returns ENOENT.
+
+    * To view the arguments for a particular system call, see the corresponding
+      manpage. For example, to view the arguments for the 'open' system call,
+      type 'man 2 open'.
+
+    * Note that string and memory buffer arguments (such as pathnames) appear
+      to the system call as an integer representing the memory address at which
+      the string or buffer is located.  You will need to use Systap's methods
+      (such as readProcessMemNullTerm() for null-terminated strings, and
+      readProcessMem() for non-null-terminated blocks of memory) to read values
+      from this memory.
+
+      See the example programs for sample code that illustrates how to use
+      these methods from Perl/Python/Ruby.
+

@@ -1,0 +1,237 @@
+	       P R E L I M I N A R Y    S P E C I F I C A T I O N
+
+					   Due 2:00 AM, Friday, 09 October 2009
+
+CPSC 323   Homework #3    An Ounce of Compression
+
+
+(60 points) Write file compression and decompression filters:
+
+      encode [-m MAXBITS] [-r BLOCK.RATIO]
+
+      decode
+
+encode reads a stream of characters from the standard input, compresses it
+using the Lempel-Ziv-Welch algorithm, and writes the stream of codes to the
+standard output as a stream of bits packed into 8-bit bytes.  decode reads
+from the standard input a byte stream written by encode, decompresses the
+stream of codes, and writes the stream of characters to the standard output.
+
+encode and decode are a single program (i.e., they are hard links to the same
+file) whose behavior is determined by the name by which it is invoked (i.e.,
+the 0-th command-line argument).  Flags may appear in any order and any number
+of times; the last occurrence supersedes any earlier ones.
+
+encode uses double hashing to make the search for a (PREF,CHAR) pair in the
+string table reasonably efficient and assigns the index of the pair in the
+hash table as the associated CODE to keep the amount of storage required at
+a bare minimum (e.g., neither the CODE nor any pointers need be stored).
+
+The initial size of the hash table is 2^9 (= 2 to the power 9); and the size
+doubles whenever the load average would exceed .99, up to a maximum of 2^12
+(or 2^MAXBITS if the -m flag is specified).  In effect, this limit specifies
+the maximum number of strings in the table.
+
+encode writes codes using the number of bits required to specify valid codes
+at the time (e.g., 9 bits when the size of the hash table is 512, but 10 bits
+when the size doubles), up to a maximum of 12 bits (or MAXBITS if the -m flag
+is specified)
+
+encode stops adding codes to the string table when it is full (i.e., the load
+average AFTER the insertion would exceed .99 but the size cannot be doubled).
+
+With the reset option -r BLOCK.RATIO, encode breaks the code stream into
+segments, each containing BLOCK codes.  For each segment it computes
+
+  NREAD = #bits in the input stream compressed by the codes in the segment
+  NSENT = #bits in the code stream corresponding to these codes
+
+If NSENT > .RATIO * NREAD for any segment, then the table is reset to its
+initial configuration for the start of the next segment.
+
+For example, with -r 1000.8, if the 1st through the 1000th codes in the code
+stream compress 1234 bytes = 9872 bits in the input stream but occupy more
+than .8 * 9872 bits, then the string table is reset to its initial value
+before the next code is sent.  Otherwise, the test is repeated for the next
+1000 codes (i.e., the 1001st through the 2000th), etc.
+
+Use the submit command to turn in your source and log files for encode/decode
+as assignment 3.
+
+YOU MUST SUBMIT YOUR FILES (INCLUDING THE LOG FILE) AT THE END OF ANY SESSION
+WHERE YOU HAVE SPENT AT LEAST ONE HOUR WRITING OR DEBUGGING CODE, AND AT LEAST
+ONCE EVERY THREE HOURS DURING LONGER SESSIONS.  (All submissions are retained.)
+
+
+Notes:
+
+1. encode should write a one-line message to stderr and exit when an invalid
+   option is specified or where BLOCK is nonpositive.  decode should do so
+   when it detects a file that encode could not have generated.  However,
+   encode need not detect the case where MAXBITS (resp., BLOCK.RATIO) is not
+   an integer (resp., double).
+
+2. If MAXBITS <= 8 (= CHAR_BIT in <limits.h>) or 20 < MAXBITS, then encode
+   replaces MAXBITS by 12.
+
+3. The -m and -r flags are omitted for decode since this is more convenient
+   for the user.  (What would happen if you forgot the value of MAXBITS for a
+   particular compressed file?) Thus this information must be represented in
+   the output from encode.  For example, to represent MAXBITS:
+
+   a. The first byte could contain the maximum code size.
+
+   b. A special code (e.g., 0 or 111...111) could be used to indicate that
+      the code size should be increased.
+
+   Or you could use both.
+
+4. Here is a possible pair of hash functions:
+
+     // Hash functions for SIZE a power of 2 */
+     #define REDUCE(x)  ((x) & (Size-1))               // Reduce to [0,SIZE)
+     #define HASH1(p,c) REDUCE ((p << CHAR_BIT) | c)
+     #define HASH2(p,c) REDUCE (64 * HASH1(p,c) + 1)
+
+   where Size is the size of the hash table.  Recall that the probe sequence is
+
+     HASH1(p,c), HASH1(p,c) + HASH2(p,c), HASH1(p,c) + 2*HASH2(p,c), ...
+
+   where each value must be reduced to [0,Size).
+
+   Since encode sends the index of (PREF,CHAR) in the hash table, both encode
+   and decode can use the SAME data structure for the string table and there
+   is no need to store CODE explicitly.  This reduces the amount of code and
+   storage required.
+
+5. encode should handle both text and binary files (i.e., stdin may contain
+   any of the 256 possible byte values, including the null character '\0').
+
+6. encode and decode should be relatively bombproof.  However, they may assume
+   that malloc() and realloc() will never fail.
+
+7. Your solution may incorporate any of the following files:
+
+     Hwk3/code.c    Source file for putCode() and getCode()
+     Hwk3/code.h    Header file defining putCode() and getCode()
+     Hwk3/codbg.c   Debugging version of putCode() and getCode()
+
+   However, unless you modify these files, your Makefile and sources must
+   reference the originals; e.g.,
+
+     #include "/c/cs323/Hwk3/code.h"
+
+   rather than
+
+     #include "code.h"
+
+8. Do NOT use the pow() function; use the shift operator << instead.
+
+9. The degree of LZW compression (that is, the precise length of the output
+   from encode) depends on the file, the values of MAXBITS and RATIO and how
+   these values are stored, and the number of special codes (e.g., EMPTY,
+   INCR_NBITS, RESET).  Indeed, the compressed file can be larger than the
+   original in some cases.  Thus all tests of size will be in comparison
+   with that given by Hwk3/encode (which the scripts assume is a correct
+   implementation of LZW) and will be relatively loose.
+
+A. The following capabilities will be worth at most the number of points
+   specified below:
+
+   * (12 points) handling binary files
+
+   * (15 points) increasing the code size from 9 to MAXBITS bits (vs. always
+     using MAXBITS bits)
+
+   * (5 points) implementing the -r RATIO option
+
+   * (5 points) keeping the amount of storage associated with the string table
+     at a bare minimum:  the number of bytes should be well BELOW 8*N (where N
+     is the number of slots in the hash table), even when the size is doubling
+     (e.g., it should never exceed 2^(MAXBITS+3) - 1).  Hint:  What are bit
+     fields?
+
+     Points to Ponder:  If you implemented this algorithm in a device (e.g.,
+      a modem), you would want to use as little memory as possible to reduce
+      the cost.  Can you do so with only 4 * 2^MAXBITS bytes in the heap?
+      If you limit MAXBITS <= 16, will 3 * 2^MAXBITS bytes suffice?
+
+
+Hints on Encode/Decode
+~~~~~~~~~~~~~~~~~~~~~~
+1. It is MUCH easier to write the core of encode/decode in three stages:
+
+   Stage 1:  The size of the hash table is fixed at 2^MAXBITS; encode outputs
+     the codes as ASCII integers, one per line (e.g., using printf()), and
+     decode inputs the codes in the same format; the number of bits per code
+     is ignored.
+
+   Stage 2:  As more strings are added, the size of the hash table grows from
+     2^9 to 2^MAXBITS, doubling each time that the load average exceeds .99;
+     encode outputs the codes in the form NBITS:CODE, where NBITS and CODE
+     are ASCII integers (e.g., 10:666), and decode inputs the codes in the
+     same format, checking that the number of bits expected agrees with NBITS
+     [see Hwk3/codbg.c].
+
+   Stage 3: encode outputs the codes as a stream of bits, packed into chars,
+     and decode inputs the codes in the same format.
+
+   Since the "compressed" data is human-readable in Stages 1 and 2, they are
+   easier to debug.  Moreover, the first part of the test script will not
+   check the size of the output from encode so that the code from these stages
+   should be able to pass all such tests.
+
+2. While the pseudo-code for decode uses a stack to output the string of
+   characters corresponding to a given code, it may be easier to use a
+   recursive function instead.
+
+3. Use int's rather than char's to hold character values, at least initially.
+   The increase in storage is minor, but experience suggests that the savings
+   in debugging time can be major.
+
+4. Since compression followed by decompression should reproduce the original,
+   the acid test for encode/decode is that
+
+	% encode < FILE | decode | cmp - FILE
+
+   does not produce output for any file FILE.  In this command
+
+   * encode reads bytes from FILE and compresses them into a sequence of codes
+     (that are written to its standard output);
+
+   * decode reads this sequence of codes and decompresses them into a sequence
+     of bytes (that are written to its standard output); and
+
+   * cmp reads this sequence of bytes and compares it to the contents of FILE,
+     printing a message only if it finds a discrepancy (shorter, longer, or
+     at least one character different).
+
+   "od -bc" and "cat -v -e -t" are two other useful commands for looking at
+   files.
+
+5. The primary difference between text files and binary files is that the
+   latter usually contain NUL characters (i.e., '\0').  Thus if your code works
+   on text files but not on binary files, you know where to start looking.
+
+6. It may be help to write scaffolding code to
+
+   * dump the string table from either encode or decode (or to compare the two
+     tables)
+
+   * verify that the table is consistent; for example, in each (PREF, CHAR)
+     pair, CHAR is a valid character and PREF is a valid code (or some other
+     special value).
+
+7. The notes above give two schemes for keeping encode and decode synchronized
+   with respect to the size of the hash table and the number of bits per code
+   (= NBITS).  The second adds a few extra codes to the output (e.g., one for
+   each increase in NBITS), but makes it easier for decode to recognize when
+   to change NBITS.  Then again you could use both schemes.
+
+8. When encode sends a code, the number of bits depends on the size of the
+   current table, not the number of strings stored.  That is, whether encode
+   wanted to send 11 or 10 or 1110, it still would send at least four bits
+   (0011 or 0010 or 1110).  decode knows how big the table is, so it can
+   deduce how many bits that encode sent.
+
+								CS-323-09/23/09

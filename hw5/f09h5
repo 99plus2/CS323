@@ -1,0 +1,129 @@
+	       P R E L I M I N A R Y    S P E C I F I C A T I O N
+
+					  Due 2:00 AM, Friday, 06 November 2009
+
+
+CPSC 323   Homework #5    Merrily We Lex Along, ...
+
+(60 points) Write a command line lexer "Lex" that prompts for and reads
+csh-like (csh = C SHell) commands from the standard input, breaks them into
+tokens, and writes the tokens to the standard output, identified by token type
+and separated by blanks.  Here a token is one of:
+
+(1) a maximal contiguous sequence of nonblank printing characters (see
+    isgraph()) other than the metacharacters <, >, ;, &, |, (, and );
+
+(2) a redirection symbol (<, >, >>, or |);
+
+(3) a command separator (;, &, &&, or ||).
+
+(4) a left or right parenthesis (used to group commands);
+
+Whitespace can be used to separate tokens from one another and is otherwise
+ignored.  Nonprinting characters are treated as blanks.
+
+Lex should also include a history mechanism.  Remember the most recent 323
+commands and replace any substring of the command line of the form !! or !N or
+!-N or !?STRING?  as follows:
+ 
+  !!        -> last remembered command
+	    
+  !N        -> N-th command read (N is any sequence of digits)
+	    
+  !-N       -> N-th last remembered command (N is any sequence of digits)
+	    
+  !?STRING? -> most recent remembered command with a token that contains
+	       STRING (= a nonempty sequence of characters that does not
+	       contain whitespace or ! or ?)
+	    
+The replacement string consists of the specified sequence of tokens separated
+by single blanks.
+ 
+If the notation above is followed by a *, then the leading token in the command
+is omitted.  If it is followed by a ^, then only the first token is used.  If
+it is followed by a :N, then only the N-th token is used.  If it is followed by
+a $, then only the last token is used.
+ 
+For example:
+ 
+  (1)$ a b c d e
+  a:10 b:10 c:10 d:10 e:10
+  (2)$ b c d e f
+  b:10 c:10 d:10 e:10 f:10
+  (3)$ !1
+  a b c d e
+  a:10 b:10 c:10 d:10 e:10
+  (4)$ !-2
+  b c d e f
+  b:10 c:10 d:10 e:10 f:10
+  (5)$ !?a? !?a?
+  a b c d e a b c d e
+  a:10 b:10 c:10 d:10 e:10 a:10 b:10 c:10 d:10 e:10
+  (6)$ !?f?*
+  c d e f
+  c:10 d:10 e:10 f:10
+  (7)$ !2$
+  f
+  f:10
+ 
+Replacement is done before tokenization begins.  The search for substrings to
+expand proceeds from left to right and continues after each replacement string.
+If the requested substitution is impossible, then the substring is deleted and
+an error message is written to stderr, but the search continues.  If there are
+substitutions and all succeed, then the expanded line is written to the stdout
+before its list of tokens.
+ 
+The history mechanism remembers a command line as it appears after expansion
+has taken place (but only if it contains at least one token).
+ 
+The file Hwk5/mainLex.c contains the main program for Lex; all you have to
+write are the functions lex(), hExpand(), hRemember(), hClear(), and hDump(),
+whose interfaces are specified in Hwk5/lex.h and Hwk5/history.h.
+ 
+Notes:
+ 
+1. [Glass, Chapter 8] contains a more complete description of csh, including
+   the history mechanism, the various I/O redirection operators, command
+   separators, and the use of parentheses.  Unlike csh, Lex does NOT handle
+   filename substitution (*, ?, and [..]); command substitution (`command`);
+   shell variables (name=variable); or macro expansion ($...).  Moreover, the
+   behavior of Lex may not match csh in other particulars, including:
+     a. Treatment of escape characters
+     b. Treatment of strings
+     c. History commands other than those described above
+     ...
+   Note:  This list will expand as I learn of discrepancies.
+
+2. DO NOT MODIFY Hwk5/lex.h or Hwk5/history.h or Hwk5/mainLex.c.  The source
+   code for lex(), hExpand(), hRemember(), hClear(), and hDump(), should be in
+   a different file (or even better, two files, one for lex(), one for
+   hExpand() et al.).
+
+3. For simplicity, you may ignore the possibility of error returns from
+   malloc()/realloc().  However, you should free() all such storage when it is
+   no longer needed so that all storage is freed before Lex exits.  (Note that
+   main() calls hClear() before it exits.)
+
+4. You may assume that strings passed to hExpand() contain only nonblank
+   printing characters (see isgraph()) and whitespace (see isspace()).
+
+5. Lex may use a fixed-length array or a linked list to implement the history
+   mechanism.
+
+6. To avoid a limit on the size of a line, Lex uses the function
+
+	char *getLine(FILE *fp)
+
+   in the file /c/cs323/Hwk5/getLine.o (see also /c/cs323/Hwk5/getLine.h).
+
+7. You may find the functions strtol(), strspn(), and strcspn() useful.
+
+    
+Use the submit command to turn in your source and log files for Lex as
+assignment 5.
+
+YOU MUST SUBMIT YOUR FILES (INCLUDING THE LOG FILE) AT THE END OF ANY SESSION
+WHERE YOU HAVE SPENT AT LEAST ONE HOUR WRITING OR DEBUGGING CODE, AND AT LEAST
+ONCE EVERY THREE HOURS DURING LONGER SESSIONS.  (All submissions are retained.)
+
+								CS-323-10/20/09

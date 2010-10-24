@@ -1,0 +1,112 @@
+	       P R E L I M I N A R Y    S P E C I F I C A T I O N
+
+					   Due 2:00 AM, Friday, 23 October 2009
+
+CPSC 323   Homework #4    Fun With Macros
+
+(20 points) The basic function of the hybrid C/shell macro processor M09 is to
+copy lines from the standard input to the standard output.  However,
+
+* certain strings of characters (which specify macro expansion) are replaced by
+  other strings of characters and
+
+* certain lines are deleted
+
+all according to macro instructions contained in the input.
+
+Lines of the forms below are treated as macro instructions (leading and
+trailing whitespace is ignored):
+
+  #define NAME VALUE
+    Associate the macro NAME with the string VALUE (if NAME has already been
+    defined, then the old VALUE is discarded).  In every subsequent line that
+    does not contain a macro instruction, instances of the strings #NAME and
+    #{NAME} are replaced by string VALUE (see below).
+
+  #undef NAME
+    If NAME has already been defined, then remove it from the list of defined
+    macros; otherwise do nothing.
+
+  #ifdef NAME
+  ...
+  #else
+  ...
+  #endif
+    Ignore all lines between the #else and the #endif if NAME is a defined
+    macro, and all lines between the #ifdef and the #else otherwise.  Note
+    that these macros can be nested.
+
+Here
+
+* The NAME field of a #define, #undef, or #ifdef macro instruction can be any
+  maximal, nonempty string of alphanumeric or _ characters.
+
+* The VALUE field of a #define macro instruction can be any sequence of
+  characters (including whitespace characters other than newlines).  However,
+  leading and trailing whitespace are ignored, so that VALUE can be the empty
+  string.
+
+* The fields of the #define, #undef, and #ifdef macro instructions must be
+  separated by whitespace.  An empty VALUE field need not be so separated.
+
+Every line that is not treated as a macro instruction is scanned from left to
+right.  If a string of the form #NAME or #{NAME} is encountered and NAME is a
+defined macro, then that string (i.e., either #NAME or #{NAME}) is replaced by
+the corresponding VALUE string and the scan resumes at the beginning of the
+replacement string.  When the end of the line is reached, the line is output.
+
+Here NAME is always a MAXIMAL string.  Thus in the input #AB/ M09 either
+replaces the first three characters by the value of the macro AB (if AB is a
+defined macro) or leaves them unchanged, even if A is a defined macro.  To
+replace the #A, you would need to write the string as #{A}B/.
+
+Examples:
+  INPUT:                                OUTPUT:
+    #define alpha #foo#bar#{foo}          CS-323a
+    #define foo #{three}
+    #define bar #two
+    #define two   2
+    #define three 3
+    CS-#{alpha}a
+
+  INPUT:                                OUTPUT:
+    #ifdef beta                           One of the following, depending
+      beta is defined                     on whether or not beta is defined:
+    #else                                   beta is defined
+      beta is not defined                   beta is not defined
+    #endif
+
+Macro replacement cannot cause a line to be treated as a macro instruction,
+even if the modified line should happen to have the same format as one.
+
+M09 detects the following errors:
+
+* no #else to match an opening #if;
+
+* no #if to match a closing #else or #endif;
+
+* no #endif to match an opening #if-#else;
+
+and uses die() to print a one-line error message to stderr and exit.  It does
+not detect cyclical macro definitions; nonprinting characters; or attempts to
+define a macro with the names define, undef, ifdef, else, and endif.
+
+Notes:
+
+1. The macro instructions (#define, #undef, and #ifdef-#else-#endif) are drawn
+   from the similar constructs in C; the macro invocations (#NAME and #{NAME})
+   are drawn from the Unix shells (sh, bash, and csh).
+
+2. The #ifdef-#else-#endif macro instructions will worth at most 10 points.
+
+3. My solution uses recursion (to handle the nested #ifdef's), a hash table
+   (for the macro definitions), and lots of regular expressions (for matching).
+
+Use the submit command (see below) to turn in the Perl/Python/Ruby source file
+and log file for M09 as assignment 4.
+
+YOU MUST SUBMIT YOUR FILES (INCLUDING THE LOG FILE) AT THE END OF ANY SESSION
+WHERE YOU HAVE SPENT AT LEAST ONE HOUR WRITING OR DEBUGGING CODE, AND AT LEAST
+ONCE EVERY THREE HOURS DURING LONGER SESSIONS.  (All submissions are retained.)
+
+								CS-323-10/08/09

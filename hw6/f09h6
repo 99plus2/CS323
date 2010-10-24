@@ -1,0 +1,231 @@
+	       P R E L I M I N A R Y    S P E C I F I C A T I O N
+
+					 Due 2:00 AM, Tuesday, 01 December 2009
+
+CPSC 323   Homework #6   Sister Sue Saw C-Shells ...
+
+(60 points) Csh is a simple shell, a baby brother of the C-shell csh, and
+offers only a limited subset of csh's functionality:
+
+- simple command execution with zero or more arguments
+
+- redirection of the standard input (<, <<HERE)
+
+- redirection of the standard output (>, >>, >!, >>!)
+
+- redirection of the standard error (>&, >>&, >&!, >>&!)
+
+- use of the noclobber variable to avoid the accidental destruction of files
+
+- pipelines (|, |&) consisting of an arbitrary number of commands, each having
+  zero or more arguments
+
+- multiple commands per line, separated by ; or & or && or ||
+
+- groups of commands (= subcommands), enclosed in parentheses
+
+- builtin commands that support changing directories
+
+    cd
+    cd directory
+    pushd directory
+    popd
+    dirs                  (optional; will not be tested)
+
+- reporting the status of the last simple command, pipeline, or subcommand
+  executed in the foreground by setting the environment variable $? to its
+  "printed" value (e.g., "0" if the value is zero)
+
+Once the command line has been parsed, the exact semantics of Csh are those
+of csh, except for the noclobber variable, the status variable, and the fine
+points listed below.
+
+The assignment is to write the process() function called from Hwk6/mainCsh.c;
+thus you should use (i.e., link with)
+
+* Hwk6/mainCsh.o as the main program (source is mainCsh.c)
+
+* Hwk5/getLine.o to read command lines (interface in Hwk5/getLine.h; source
+  is Hwk5/getLine.c)
+
+* Hwk6/tokenize.o to tokenize each command line (interface in Hwk6/parse.h)
+
+* Hwk6/parse.o to parse each token list into a syntactically correct list of
+  CMD structures (interface in Hwk6/parse.h; see Note 2 below for details).
+
+* Hwk6/public.o to provide utility functions (interface in Hwk6/parse.h;
+  source is Hwk6/public.c)
+
+Use the submit command to turn in your log file (see Homework #1) and the
+source files for Csh (including a Makefile, but not mainCsh.*, getLine.*,
+tokenize.*, parse.*, or public.*) as assignment 6.
+
+YOU MUST SUBMIT YOUR FILES (INCLUDING THE LOG FILE) AT THE END OF ANY SESSION
+WHERE YOU SPEND AT LEAST ONE HOUR WRITING OR DEBUGGING CODE, AND AT LEAST ONCE
+EVERY FIVE HOURS DURING LONGER SESSIONS.  (All submissions are retained.)
+
+
+Notes:
+
+1. An EOF (^D in column 1) causes Csh to exit since getLine() returns NULL.
+
+2. parse() parses the token list produced by tokenize() into a linked command
+   structure (see Hwk6/parse.h).  For example, the command line
+
+      < A B | ( C >&! D & E < F ) > G ; H I
+
+   is parsed into the linked CMD structure (see Hwk6/parse.h)
+
+	+---------+      +---------+
+	|         |      |         |
+	|    0    | ;    |    2    | ;
+	|    {}   |----->|  {H,I}  |
+	|         |      |         |
+	+---------+      +---------+
+	  |
+	  v
+	+---------+      +---------+
+	|       >||      |       >G|
+	|    1    | ;    |    0    | ;
+	|   {B}   |----->|    {}   |
+	|<A       |      |<|       |
+	+---------+      +---------+
+				 |
+				 v
+			 +---------+      +---------+
+			 |     >&!D|      |         |
+			 |    1    | &    |    1    | ;
+			 |   {C}   |----->|   {E}   |
+			 |         |      |<F       |
+			 +---------+      +---------+
+
+   where each CMD struct is represented schematically as
+
+	+---------------+               Symbol      Meaning
+	|           >...|
+	|               |               argc        #command-line arguments
+	|     argc      | sep           {argv}      Command-line arguments
+	|               |--------->     sep         Command terminator
+	|    {argv}     | (next)        <...        Input redirection
+	|               |               >...        Output redirection
+	|<...           |               pipe        Link to pipeline
+	+---------------+               subcmd      Link to subcommand
+	  |           |                 next        Link to next command
+	  | (pipe  )  | (subcmd)
+	  v           v
+
+   Note:  The FROMFILE field of each simple command with a here document points
+   to a string containing the lines in that here document.
+
+   Note:  If a sequence of commands separated by && and || is followed by an &,
+   it is converted to a subcommand and the subcommand is backgrounded.  This
+   makes it easier to implement backgrounding.
+
+3. While executing a command, pipeline, or subcommand, Csh waits until it
+   terminates, unless it is followed by an &.  Csh ignores SIGINT interrupts
+   while waiting, but child processes (other than subshells) do not.
+
+4. Csh uses perror() to report errors from system calls.  It may ignore error
+   returns from dup(), dup2(), close() and signal(), but not from fork(),
+   open(), pipe(), chdir(), or getcwd().  All error messages must be written
+   to stderr and be one line long.
+
+5. If the number of arguments to a built-in command is incorrect, or if an
+   error is detected during execution of that command, Csh writes an error
+   message, which may have been redirected.  For example,
+
+     (1)$ popd home >& FILE
+
+   writes the message to FILE.  More generally, all output from built-in
+   commands should be redirectable.
+
+6. When a built-in command fails, any subsequent commands at that level are
+   ignored.  For example, if there is a file named bar in the current working
+   directory but no subdirectory named foo, then the command
+
+     (3)$ cd foo ; head bar ; ls
+
+   will not cause "head bar" or "ls" to be executed, but the command
+
+     (4)$ (cd foo ; head bar) ; ls
+
+   will cause "ls" to be executed (but not "head bar").
+
+7. The easiest way to implement subcommands (and possibly pipelines as well) is
+   to use a subshell.
+
+8. process() should free all storage it allocates before returning to main().
+
+9. Hwk6/process.h contains the header files #included in my solution.
+
+A. No, you may not use system() or /bin/*sh.
+
+
+Fine Points:
+
+1. The command separators && and || have the same precedence, lower than | or
+   |&, but higher than ; or &.
+
+   && causes the command following (a simple command, pipeline, or subcommand)
+   to be skipped if the current command exits with a nonzero status (= FALSE,
+   the opposite of C).  The status of the skipped command is that of the
+   current command.
+
+   || causes the command following to be skipped if the current command exits
+   with a zero status (= TRUE, the opposite of C).  The status of the skipped
+   command is that of the current command.
+
+2. When a built-in command is invoked as a stage in a pipe or in a subcommand,
+   that command does not apply to the parent shell.  For example, the command
+
+     (2)$ cd /c/cs323 | ls
+
+   does not work as you might otherwise expect.
+
+3. For a simple command, the status is that of the program executed (*), or
+   errno if some system call failed.
+
+     (*) This status is normally the value WEXITSTATUS(status), where the
+     variable status contains the value returned by the call to wait(&STATUS)
+     that reported the death of that process.  However, for processes that are
+     killed (i.e., for which WIFEXITED(status) is true), that value may be
+     zero.  Thus you should use the expression
+
+       (WIFEXITED(x) ? WEXITSTATUS(x) : 128+WTERMSIG(x))
+
+     instead.
+
+   For a pipeline, the status is that of the earliest (i.e., leftmost) stage to
+   fail, or 0 if the status of every stage is true.
+
+   For a subcommand, the status is that of the last foreground command/
+   subcommand to be executed (or 0 if none).
+
+   For a built-in command, the status is 0 if successful, the value of errno if
+   a system call failed, and 1 otherwise.
+
+4. In csh the status $? is an internal shell variable.  However, since Csh
+   does not expand these variables, it has no mechanism to check their value.
+   Thus in Csh the status is an environment variable, which can be checked
+   using /usr/bin/printenv (i.e., printenv ?) and set using the setenv()
+   library call.
+
+5. In csh the noclobber variable is an environment variable, not an internal
+   shell variable.  However, the built-in command setenv is not part of the
+   specification, so there is no way to set that variable within Csh.  Thus
+   it must be set prior to invoking Csh.
+
+
+Limitations:
+
+The following will be worth at most 10 points each
+ * here documents (<<)
+ * &&, ||, and &
+ * grouped commands
+ * the built-in commands cd, pushd, and popd
+ * the status variable $?
+Also, pipes will be worth at most 20 points.  Each "at most" is a crude upper
+bound intended to give more flexibility in developing the test script and to
+allow interactions between features in different groups above.
+
+								CS-323-11/03/09
