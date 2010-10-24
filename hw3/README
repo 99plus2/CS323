@@ -1,0 +1,27 @@
+LZW:
+
+syntax: encode [-m MAXBITS] [-r BLOCK.RATIO]
+
+MAXBITS is a number representing the max table size for the remembered
+strings in the table. This number is initially 12, and can't get larger
+than 20 or smaller than 9 (the table starts out with the 2^8 ASCII chars.
+
+BLOCK represents the number of characters analyzed before the compression
+RATIO is checked against the actual ratio. If numRead * .RATIO < numCompressed
+then the table is reset.
+
+syntax: decode
+
+decodes an encoded file. encode outputs MAXBITS in unary at beginning of file
+so user doesn't have to remember the value of MAXBITS he used to encode.
+
+the program uses bit fields to keep memory at all times below 2^(2+MAXBITS),
+even when rehashing the table, which is dynamically resized when necessary.
+
+this program uses the LZW compression algorithm.
+
+helpful example command:
+
+encode -m 20 < FILE | decode | cmp - FILE
+
+tells you whether the encode/decode worked or not with a table size 2^20

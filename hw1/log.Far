@@ -1,0 +1,56 @@
+ESTIMATE of time to complete assignment: 30 hours
+
+Date    Start Time    Time Spent     Work Completed
+----    ----------    ----------     --------------
+0907    4:00          2:00           Got the file archiver to write to files and list their size, mimicking the style used in the provided Far binary. Realized
+                                     what other things I will need to learn in order to flesh out the program.
+
+0908    8:00          1:00           Worked from my room to completely change the layout of my program. I made the command line interpreter first which then sends
+				     to different functions based on r/d/x/t.
+
+0908    10:00         1:33	     Tried to get a very primitive form of dkey to work. Got tired so will debug tomorrow, spent a little time fooling around with
+				     stat() and struct stat to try to get file and directory manipulation down (see stat.c) but it failed miserably, will meet with
+				     TA about it because I'd rather not spend a lot of time searching through poorly documented c functions...
+
+0909    8:00	      2:22	     Got r and d to work very primitively, only within the current working directory. Cannot figure out why closing the archived file
+				     flushes a y with two dots at the end into the file. Will look through documentation later.
+
+0911    3:00          2:21	     Worked out the y with two dots, and converted to using fgets, fprintf, and fscanf to read and output to files. Made code much cleaner.
+				     Got t and x to work as well (all primitively in the working directory -- very satisfied). I am going to meet with the TA soon so he can
+				     educate me on how to manipulate directories and such so I can take the project to the next level.
+
+0914    10:00         2:56	     Got extract and delete to work for directories. Still need to implement directories for rkey, but have a general idea for how to do it.
+				     Made match into two functions, one of which checks for a complete match, the other of which checks for directory match, which was essential
+				     for implementing directory-capable versions of extract and delete. This was done on my laptop at home, will submit next time I'm in the zoo.
+
+0915    8:30	      2:37	     Spruced up isDirOf (a couple of logical faults for returning truth status) and fixed a malloc error in makeDir -- off by 1 byte. Made extract
+				     work for no arguments, and now I'm about to start using struct stat and stat() and fstat() to tell me the byte size of files, instead of using
+				     fseek() and ftell(). Once I'm decent at using those operations, I think I'll be ready to tackle the r key recursion. Taking a small break now.
+
+0916    12:00	      1:09	     Wrote pseudocode for the recursive rkey, and got stat and struct stat to work for me (see pseudocodeForR.c and stat.c, respectively). Will trudge
+				     forward tomorrow.
+
+0916    8:00          3:40	     Got recursivity in directories working. Realized that there may be a problem with cwd when the argument passed begins with one or more ./ or ../,
+				     but I think I have a solution. Right now, the test.Far script is throwing a really annoying error on if(S_ISDIR(statBuf.st_mode)) saying statBuf
+				     is not initialized, but even when I initialize it to null IT STILL WONT STOP THROWING THE ERROR!! Will email Rich about it presently. Tomorrow
+				     I will implement error throwing and reading in large filenames, because right now mine only accounts for strlen(name) < 100.
+
+0917	12:00	      0:26	     On my walk back to my room, I realized I had been assuming that stat() and opendir() require the absolute path to work, but when I got home and
+				     tested it, I realized that relative path is just fine. This makes everything SO MUCH easier. Got rid of the error talked about previously as well.
+				     Also, I reread through the homework and realized that I missed the fact that I have to write estimated time to complete project, so I wrote it in
+				     now. I'm pretty sure it's what I would have put down anyway, but who knows. Very solid night of programming.
+
+0917    10:00	      2:58	     Got mkdir to walk down the line of directories, making only the ones that don't exist. Worked on making sure everything is freed properly, now
+				     valgrind doesn't give errors. Fixed the special case where the file has 0 bytes. Started using lstat to fix the sym link error, and now I use
+				     S_ISREG() to make sure its a regular file. Next up, outputting error messages properly and saving a temporary file of the archive in case
+				     a fatal error occurs.
+
+0917    4:00	      2:50	     Got all the tests to work, having problems thinking of how to let my program know zoo/cat has been added when the zoo directory is being added
+				     to the archive. Will take a break now and think about it. All that is left after that is to malloc(PATHNAME_MAX) instead of 100, and mop up any
+				     inconsistencies after reading the specification a few more times.
+
+0917    7:00	      2:57	     Gone as far as I can take it. Contemplated checking for corrupted archive, but couldn't think of a good way to do it. Didn't implement restoring
+				     the archive, because, as it stands, any error I throw now will exit before anything is done to the archive. Got the zoo/cat zoo problem working
+				     though, and implemented the PATH_MAX. Finished.
+	             ------
+Total time spent:    28:49

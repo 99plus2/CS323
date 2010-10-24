@@ -1,0 +1,47 @@
+Author: Doug von Kohorn
+Class: CS323
+Professor: Stanley Eisenstat
+
+ESTIMATED time to complete: 30 hours
+
+Date		Start		Time		Description
+----		-----		----		-----------
+0930		7:00		2:39		Pretty successful start, got the algorithms working for compress and decompress. I can shorten a lot of code, and need to clean up the really verbose parts,
+						but overall I think Stage 1 is 75% done.
+1002		6:00		2:16		Encountered a few problems -- namely needing to change to int to distinguish between 255 and -1 char. Now there is a very complicated problem that I don't
+						understand, but it looks like the hash table gets out of sync at some point. Will sleep on it and hopefully can get it solved soon so I can move onto the
+						next stage.
+1003		1:00		2:48		Since still no progress on getting the hash table in sync with encode, wrote the command line parsing code. Tested and working.
+1004		2:00		1:00		I put comments on my code, sent in my perfectly working lzw BEFORE I changed to dynamic bits, and sent in my buggy lzw AFTER I changed to dynamic bits,
+						and sent it to Rich for some sane advice.
+1005		10:30		1:00		Turns out I needed to switch the update to in between putCode and addCode, and was off by an index of 1. The dynamic bits works very
+						well now!
+1005		11:37		0:45		Moved to stage 3. Got load increase at .99, got maxBits to be encoded in the file. Going to move onto BLOCK.RATIO soon, after using public tests
+						to test the program.
+1005		4:00		1:57		Removed stack implementation and got recursive function working to reduce storage allocation. Program still not nearly as fast as the public binary. Would
+						like to find out why. I think it has something to do with my for loops in addCode() and getCode(). I also changed unsigned long ints to unsigned ints after
+						realizing that sizeof(int) == 4 which is large enough for 20 bits of storage.
+1005		10:30		:50		Hashing function getCode() is averaging about 5000 searches per try when table exceeds 2^14. Tried to find out why with no luck. Will try again tomorrow.
+1006		12:50		1:10		Figured out why hashing was slow, but now have to figure out how to resolve resizing the table and minimizing copies. All tests pass without hashing (no copies)
+						but it's much slower. Will think about solution. Also realized that when the maxbits size is reached, the table must STOP growing. Fixed that error.
+1006		6:00		2:20		IT WORKED. I met with Rich and we talked about bit fields and whether its okay to resize the hash table while doubling it. I used a recursive algorithm to update
+						all the entries in the hash table, and used bit fields to keep everything well below 8*n, since I'm only using 29 bits. Next up: BLOCK.RATIO.
+1007		12:33		0:33		Cleaned up my code and commented it in preparation for implementing BLOCK.RATIO
+1007		12:00		0:43		Got the basics of BLOCK.RATIO started, but there is a small off by one sync error that I need to figure out now...
+1007		6:00		2:03		Figured out why it was out of sync. My code for resetting the table was mapping to the same place as another value. Also, a couple other update conditions needed
+						to be fixed. All tests are passed. I shall torture my code and look make its garbage tolerance more robust in the coming days.
+1010		3:00		1:15		Set up error checking for garbage, defined two preprocessor macros for printing to stderr and possibly exiting.
+1012		9:00		0:15		Fixed the BLOCK.RATIO switch to read .RATIO as a double instead as an integer which gets divided to a double. Much more accurate now.
+1012		6:30		0:45		Fixed the BLOCK.RATIO switch to account for when .RATIO was negative and when RATIO was 0.
+				----
+		TOTAL time:	22:19
+
+MAJOR DIFFICULTIES: 	First couldn't distinguish between EOF and char(255) until I used an unsigned char and an int to read in stdin. After that snafu, I proceeded normally until dynamically expanding the hash
+			The difficulty with the hash resizing was syncing the encode with the decode. I realized, at long last, that the update condition in encode() needs to happen in between putBits() and
+			addCode(). In decode, the update condition happens after addCode and before getBits(). Next up was my incorrect view of open addressing, which should stop after the first empty address
+			found. This sped up my code quite considerably. After this, my code still wasn't compressing enough because every time I resized my table, I was keeping all the duplicate codes
+			because I didn't rehash the table. I wrote a recursive algorithm to rehash all the values. The next problem was that my (pref,char) struct of a char and an int has sizeof() == 8, so when
+			I rehashed, the memory went well above 8*n. To fix this I use bit fields to give pref 21 bits and char 8 bits (all unsigned). Even though sizeof() == 4, I *think* the bit fields
+			implementation should keep it below 8*n. The BLOCK.RATIO implementation had a special case, where the previous code needed to be outputted if not done yet, and code needed to be reset
+			to either EMPTY or index(EMPTY,k) dependent on that fact. The next logical error (which took me a while to find) was because I forgot to reset my boolean which told the table to
+			stop adding codes and increasing. After that was fixed, it all worked!

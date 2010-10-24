@@ -1,0 +1,24 @@
+Author: Doug von Kohorn
+Class: CS323
+Professor: Stanley Eisenstat
+
+ESTIMATED time to complete: 13 hours
+
+Date		Start		Time		Description
+----		-----		----		-----------
+1208		6:10		0:50		Started parsing the cmd line. Part 1 complete.
+1209		7:00		1:30		Really not understanding how this is supposed to work. Talking to Rich tomorrow
+1210		8:00		2:20		Got steps 1,2,3 to work -- having trouble parsing flags, will implement the remote part tomorrow
+1211		10:00		5:08		Passing every test except for one, sent Rich an email asking about it
+1211		8:00		0:30		Had a moment of inspiration and figured out why I wasn't exiting with the correct value. Passing all tests.
+1213		1:00		0:20		Fixed a bug in the -r COPIES implementation
+				----
+		TOTAL time:    11:38
+
+MAJOR DIFFICULTIES: 	My first difficulty was figuring out how to emulate the functions. It didn't really come to me that even though I set the process
+			to GETPID, the return value was still used as if it were a call to open, read, write, or close. After that, figuring out how to store
+			the file descriptors so that all my emulated files could be accessed was a biggie. Next came handling all the error cases for flags
+			and for opening files. Once I got past this, my last complication was figuring out why I wasn't returning with the correct value, even
+			though I was setting the current error correctly. Figured that out, and I passed all tests! DONE WITH CS323.
+
+			Great class.

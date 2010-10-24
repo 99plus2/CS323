@@ -1,0 +1,27 @@
+Estimated time to complete: 10 hours
+
+Date		Start		Time		Description
+----		-----		------		-----------
+0922		6:30		0:30		Pseudocode flow of program. For each file, read in entire file, expand the tabs (expandtabs()), split lines on '\n' (splitlines()), for each line,
+						use regex to find sequences of alphanum and underscores, use find(str,start,end) for every occurrence in that string, then add to a
+						tuple (middlefield,filename,linenumber,leftfield) then use the python sort(lambda (mf,fn,ln,lf),(mf',fn',ln',lf'): cmp((mf.lower(),fn.lower(),
+						ln,lf.lower()),(mf'.lower(),fn'.lower(),ln',lf'.lower()))) to compare in left to right order of priority the items of the list (once all files
+						have been compiled into a list of those tuples in the correct way. Then	use rjust(), ljust() etc. to go through the sorted list of tuples and
+						print it with the correct format in the correct order. Python is a fantastic language.
+
+0922		8:00		3:00		So far, working smoothly. Realized that the same word can appear twice in the sentence, so I am in the process of creating a helper function to
+						deal with all the cases of the word in the given line. Other than that, my pseudocode is working perfectly (although I forgot that str.find()
+						finds a substring, not an exact match, so I got held up for a bit when "seashells..." was being added twice. All fixed though. Sleep.
+
+0923		10:00		1:17		Got the tupleHelper to work, realized that index("string") does not work when there are the same lines, so had to keep an index variable
+						passing all the tests now except the one where I have to throw an error, but I can't figure out why I'm NOT throwing an error...will ask
+						the TA
+
+0923		8:00		0:34		I realize after meeting with the TA that my program could be shortened by at least 20 lines if only I knew regex better. It's inspired
+						me to learn more about it, but since my program works, I'll just wait to see what Professor Eisenstat's regex looks like and learn on
+						my own later. Pretty much all finished -- I just have to Torture it to see how it holds up.
+
+0924		6:00		0:15		Added comments, made all errors print to stderr, and tested the program as much as possible. Now going to enjoy the music of Don Byron as a
+						tribute to the late Benny Goodman
+				----
+		Total time:	5:36	

@@ -1,0 +1,22 @@
+Far:
+
+syntax: Far KEY ARCHIVE [name]*
+
+Far uses a single archive file to maintain a collection of regular
+files called members. The KEY argument specifies the action to be taken
+the ARCHIVE argument specifies the name of the archive file; and the
+NAME arguments (if any) are names specifying which files or directories
+of files to save or restore or delete
+
+KEYS:
+1) r -- for each NAME specified, if there is a member of the archive with
+	that name, replace it in the archive by the current version of
+	the end of the archive. If NAME specifies a directory rather than
+	a file, recursively replace all filenames in that directory
+2) x -- extract each NAME specified (create or overwrite file). if no arguments
+	extract every file.
+3) d -- for each NAME specified, delete from the archive the member with
+	that name.
+4) t -- PRINT to stdout the size and name of each member of the archive
+
+EXAMPLE: Far r ./

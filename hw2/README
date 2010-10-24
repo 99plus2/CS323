@@ -1,0 +1,5 @@
+KWIC:
+
+given a bunch of files, puts words in context with their associated lines,
+then outputs in an organized table that is prioritized according to the
+lambda function at the bottom.

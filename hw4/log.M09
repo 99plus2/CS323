@@ -1,0 +1,23 @@
+Author: Doug von Kohorn
+Class: CS323
+Professor: Stanley Eisenstat
+
+ESTIMATED time to complete: 15 hours
+
+Date		Start		Time		Description
+----		-----		----		-----------
+1015		10:00		3:00		Got the #define and #undef macros to create and remove dictionary values. Created an expand() function that does marginally well so far -- still
+						figuring out a few things about regex because my matching function is a little off. Will perfect expand() before moving on to ifdef..etc...
+1016		10:00		0:40		Updated the regex to search for #MACRO and #{MACRO}
+1016		12:35		0:05		Updated the expand() function to account for lines that don't have any macros, no passes all public #define/#undef tests
+1016		4:00		0:53		Created the infrastructure for the ifdef recursion. Will take time off now to study for midterms.
+1021		2:30		1:30		Got inspired with the solution to ifdef-else-endif recursion towards the end of class, then implemented it well enough to pass all the public
+						tests. Will torture my code now.
+1021		8:00		0:50		I found a couple errors where #else should be treated not as #else and a couple other minutiae which I fixed. Pretty confident in the results.
+				----
+		TOTAL time:	6:08
+
+MAJOR DIFFICULTIES: 	Figuring out regex took a while, but eventually I got the hang of it and created very robust parsers. I think Python's regex implementation is a little bit more clumsy
+			than Perl's is, so I could probably eliminate about 15-20 lines of code if I used Perl instead of Python. The other difficulty I experienced was how to implement the
+			recursive if-else-end statements, but eventually I tinkered around with the logic enough to make it work. Used the given perfect implementation to test my code and fix
+			specifics of the regex which were hard to determine from the specification. All seems well now.

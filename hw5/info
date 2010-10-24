@@ -1,0 +1,8 @@
+Lex:
+
+Represents the front end of a tcsh shell. Writing the back end right now.
+
+All the more familiar history commands are useable as well (!!, !N, !-N, !?STRING?)
+
+All the redirection symbols are regonized as well. Tokenizes the line and sets each
+token to the corresponding type as in tcsh.
